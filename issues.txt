@@ -1,0 +1,55 @@
+COCO eval command:
+python tools/test_grounding_net.py --config-file configs/pretrain/glip_Swin_T_O365_GoldG.yaml --weight MODEL/glip_tiny_model_o365_goldg.pth TEST.IMS_PER_BATCH 1         MODEL.DYHEAD.SCORE_AGG "MEAN"         TEST.EVAL_TASK detection         MODEL.DYHEAD.FUSE_CONFIG.MLM_LOSS False         OUTPUT_DIR RESULTS
+
+----
+
+When setting up the environment with conda:
+conda create -n glip python=3.8
+conda activate glip
+pip install torch==1.9.0+cu111 torchvision==0.10.0+cu111 torchaudio==0.9.0 -f https://download.pytorch.org/whl/torch_stable.html
+pip install einops shapely timm yacs tensorboardX ftfy prettytable pymongo transformers pycocotools scipy opencv-python
+python setup.py build develop --user
+
+Running an evaluation command on COCO gives:
+File "/private/home/theop123/GLIP/maskrcnn_benchmark/layers/deform_conv.py", line 184, in forward
+    _C.modulated_deform_conv_forward(
+RuntimeError: Not compiled with GPU support
+which seems to indicate maskrcnn_benchmark is not installed properly.
+
+Before running `python setup.py build develop --user`, I checked PyTorch is installed properly and CUDA_HOME is set with:
+python -c 'import torch; from torch.utils.cpp_extension import CUDA_HOME; print(torch.cuda.is_available(), CUDA_HOME)'
+which gives
+True /usr/local/cuda-11.4/
+
+----
+
+When setting up the environment with Docker:
+docker pull pengchuanzhang/pytorch:ubuntu20.04_torch1.9-cuda11.3-nccl2.9.9
+nvidia-docker run -it --volume=/private/home/theop123/GLIP:/workspace/GLIP --workdir /workspace/GLIP pengchuanzhang/pytorch:ubuntu20.04_torch1.9-cuda11.3-nccl2.9.9 bash
+pip install einops shapely timm yacs tensorboardX ftfy prettytable pymongo transformers pycocotools scipy opencv-python
+python setup.py build develop --user
+I get:
+creating build/lib.linux-x86_64-3.8
+error: could not create 'build/lib.linux-x86_64-3.8': Permission denied
+because we don't have permissions to write to the GLIP folder volume as root user.
+
+----
+
+Trying to bypass this following https://dille.name/blog/2018/07/16/handling-file-permissions-when-writing-to-volumes-from-docker-containers
+(1) Create container with volume mount and host user ID
+nvidia-docker run -dt --volume=/private/home/theop123/GLIP:/workspace/GLIP -u $(id -u $USER):$(id -g $USER) --workdir /workspace/GLIP --name glip2 pengchuanzhang/pytorch:ubuntu20.04_torch1.9-cuda11.3-nccl2.9.9 bash
+(2) Log in as root to install pip packages
+docker exec -it -u 0 glip bash
+pip install einops shapely timm yacs tensorboardX ftfy prettytable pymongo transformers pycocotools scipy opencv-python
+(3) Log in as user to run `setup.py` that needs write permissions
+docker exec -it glip bash
+python setup.py build develop --user
+I get:
+"cannot access '/.local': No such file or directory"
+`setup.py` needs both write access and being root, I'm stuck.
+
+----
+
+Trying with a Dockerfile and no volume mount:
+docker build . -t glip
+nvidia-docker run -it glip:latest bash

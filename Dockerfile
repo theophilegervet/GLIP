@@ -1,0 +1,6 @@
+FROM pengchuanzhang/pytorch:ubuntu20.04_torch1.9-cuda11.3-nccl2.9.9
+
+COPY . /workspace/GLIP
+RUN pip install einops shapely timm yacs tensorboardX ftfy prettytable pymongo transformers pycocotools scipy opencv-python
+RUN python setup.py build develop --user
+WORKDIR /workspace/GLIP
