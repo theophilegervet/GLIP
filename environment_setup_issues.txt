@@ -54,3 +54,4 @@ I get:
 Trying with a Dockerfile and volume mount only for selected folders:
 docker build . -t glip
 nvidia-docker run -it --volume=/private/home/theop123/GLIP/MODEL:/workspace/GLIP/MODEL --volume=/private/home/theop123/GLIP/DATASET:/workspace/GLIP/DATASET glip:latest bash
+This works! This should be the first thing you try next time...
