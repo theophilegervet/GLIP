@@ -7,7 +7,8 @@ When setting up the environment with conda:
 conda create -n glip python=3.8
 conda activate glip
 pip install torch==1.9.0+cu111 torchvision==0.10.0+cu111 torchaudio==0.9.0 -f https://download.pytorch.org/whl/torch_stable.html
-pip install einops shapely timm yacs tensorboardX ftfy prettytable pymongo transformers pycocotools scipy opencv-python
+pip install einops shapely timm yacs tensorboardX ftfy prettytable pymongo transformers
+#pycocotools scipy opencv-python
 python setup.py build develop --user
 
 Running an evaluation command on COCO gives:
@@ -50,6 +51,6 @@ I get:
 
 ----
 
-Trying with a Dockerfile and no volume mount:
+Trying with a Dockerfile and volume mount only for selected folders:
 docker build . -t glip
-nvidia-docker run -it glip:latest bash
+nvidia-docker run -it --volume=/private/home/theop123/GLIP/MODEL:/workspace/GLIP/MODEL --volume=/private/home/theop123/GLIP/DATASET:/workspace/GLIP/DATASET glip:latest bash
